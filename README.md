@@ -9,3 +9,11 @@ the second file is using traint CNN (convolutional neural network) with train we
 ## Output with just data that we are interested in
 ![image](https://github.com/DaverSVK/GreenhouseControl/assets/100283209/71758910-fe09-4c0c-94d3-9f5ab29bcf9e)
 
+## Running the script
+As it said earlier these two files dont work together for now and are meat to run seperatelly. 
+With connected raspberry pi to the greenhouse is ready physicaly for all the tasks but the code supports just recieving data and comunicating with the database.
+For the first script you will need tu instal dependencies 
+
+$sudo pip3 install pyrebase
+$sudo pip3 install adafruit-circuitpython-bmp280
+$sudo pip3 install adafruit-circuitpython-bh1750
