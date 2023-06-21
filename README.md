@@ -1,5 +1,7 @@
 # GreenhouseControl
 This software is used to detect and control small greenhouse with 4 growing spots for greens
+the main folder is the heart of the comunication with database but is not functional with second python script yolov8_detection.py
+the second file is using traint CNN (convolutional neural network) with train weights "best.py"
 
 ## Output from detection by large model weights
 ![image](https://github.com/DaverSVK/GreenhouseControl/assets/100283209/f2f515c5-e37a-4fd3-aaac-91d1004513cd)
