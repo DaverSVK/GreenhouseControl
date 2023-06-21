@@ -14,9 +14,15 @@ As it said earlier these two files dont work together for now and are meat to ru
 With connected raspberry pi to the greenhouse is ready physicaly for all the tasks but the code supports just recieving data and comunicating with the database.
 For the first script you will need tu instal dependencies 
 ```
-$sudo pip3 install pyrebase
-$sudo pip3 install adafruit-circuitpython-bmp280
-$sudo pip3 install adafruit-circuitpython-bh1750
+$ sudo pip3 install pyrebase
+$ sudo pip3 install adafruit-circuitpython-bmp280
+$ sudo pip3 install adafruit-circuitpython-bh1750
 ```
 and for converter follow:
 https://github.com/adafruit/Adafruit_Python_ADS1x15
+## Running the detection
+For the second file you will need to install two dependencies 
+```
+$ sudo apt-get install python3-opencv
+$ sudo pip3 install ultralitycs
+```
