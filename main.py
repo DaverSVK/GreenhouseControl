@@ -79,6 +79,28 @@ def getDataValues(chan, chan1, chan2, chan3, sensor, sensor2, now):
     data = {"date": str(now), "water": water, "water2": water2, "water3": water3, "water4": water4, "lux": lux,
             "temperature": temperature, "pressure": pressure, "altitude": altitude}
     return data;
+    #added____________________________________________
+def startWatering():
+    print("insert code")
+    return True;
+
+def toggleLight(wantedState):
+    #pwm settings
+    if(wantedState):
+        #pwm cycle
+        lightState = True;
+
+    else:
+        # pwm cycle
+        lightState = False;
+
+    return lightState;
+
+def toggleHeating():
+    #sett Fan and heater settings
+
+    return True;
+#___________________________________________________
 
 
 def storePicture(x, now):
