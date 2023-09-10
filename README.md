@@ -17,7 +17,7 @@ For the first script (main) you will need tu instal dependencies
 $ sudo pip3 install pyrebase
 $ sudo pip3 install adafruit-circuitpython-bmp280
 $ sudo pip3 install adafruit-circuitpython-bh1750
-$ sudo pip3 install adafruit-circuitpython-ahtx0
+$ sudo pip3 install adafruit-circuitpython-ads1x15
 ```
 and for converter follow:
 https://github.com/adafruit/Adafruit_Python_ADS1x15
