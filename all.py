@@ -1,5 +1,6 @@
 from picamera import PiCamera
 from datetime import datetime
+import subprocess
 from time import sleep
 import requests
 import os
@@ -35,7 +36,6 @@ chan3 = AnalogIn(ads, ADS.P3)
 #----light--------
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(12,GPIO.OUT)
-servoLight = GPIO.PWM(12,50)
 lightState = True
 
 #----heater--------
@@ -49,9 +49,11 @@ GPIO.setup(5,GPIO.OUT)
 #----fan--------
 GPIO.setup(23,GPIO.OUT)
 GPIO.setup(18,GPIO.OUT)
+fanState = False
+fanLoop = False
 GPIO.output(23, GPIO.LOW)
-fan = GPIO.PWM(18,500)
-fan.start(20)
+fan = GPIO.PWM(18,50)
+fan.start(0)
 
 urlData="https://greenhouseapp-a928f-default-rtdb.firebaseio.com/data"
 url2="https://greenhouseapp-a928f-default-rtdb.firebaseio.com/settings"
@@ -105,20 +107,21 @@ def getDataValues(chan,chan1,chan2,chan3,sensor,sensor2,sensor3,now):
     data={"date": str(now),"water": water, "water2": water2, "water3": water3, "water4": water4, "lux": lux, "temperature": temperature,"temperature2": temperature2, "pressure": pressure,"humidity": humidity, "altitude": altitude}
     return data;
 
-def startWatering(watering):
-    if(int(watering) > 0):
-        print("Watering")
-        GPIO.output(5, GPIO.LOW)
-        GPIO.output(6, GPIO.HIGH)
-        sleep(2)
-        GPIO.output(6, GPIO.LOW)
-        GPIO.output(5, GPIO.LOW)
-        sleep(5)
-        print("pump off")
+def startWatering(watering, currentState, setpoint):
+    if (int(watering) > 0):
+        if (int(setpoint)>int(currentState)):
+            print("Watering")
+            GPIO.output(5, GPIO.LOW)
+            GPIO.output(6, GPIO.HIGH)
+            sleep(2)
+            GPIO.output(6, GPIO.LOW)
+            GPIO.output(5, GPIO.LOW)
+            sleep(0.5)
+            print("pump off")
     return True;
 
 def toggleLight(wantedState):
-    
+    servoLight = GPIO.PWM(12,50)
     if(wantedState==True):
         servoLight.start(0)
         sleep(1)
@@ -132,8 +135,17 @@ def toggleLight(wantedState):
         servoLight.ChangeDutyCycle(5)
         sleep(2)
         lightState = True;
+    servoLight.stop()
 
+    return lightState;
 
+def toggleFan(wantedState):
+    if(wantedState==True):
+        fan.ChangeDutyCycle(40)
+        lightState = True;
+    else:
+        fan.ChangeDutyCycle(0)
+        lightState = False;
     return lightState;
 
 def toggleHeating(tempSetpoint,sensor2):
@@ -178,18 +190,27 @@ while True:
         timeDur = data['light_duration']
         temp = data['temperature']
         watering = data['watering']
+        waterLevel = data['water_level']
+        fanSett = data['fan_state']
         print(temp)
         now = datetime.now()
         begin = now.replace(hour=int(timeStart), minute=0, second=0, microsecond=0)
         stop = now.replace(hour=(int(timeStart)+int(timeDur)), minute=0, second=0, microsecond=0)
 #         print(stop)
 #         print(begin)
+        if int(fanSett) == 1:
+            fanLoop = True
+        if int(fanSett) == 0:
+            fanLoop = False
+            fanState = toggleFan(False)
+            
+            
         if now > stop and lightState == True:
             lightState = toggleLight(True)
         if now < stop and now > begin and lightState == False:
             lightState = toggleLight(False)
         toggleHeating(temp,sensor2)
-        startWatering(watering)
+        
         print(x)
         if now < stop and now > begin:
             if now >= nextLog:
@@ -198,14 +219,29 @@ while True:
                 store = storePicture(x,now)
                 data = getDataValues(chan,chan1,chan2,chan3,sensor,sensor2,sensor3,now)
                 requests.post(urlData + ".json", json=data)
+                startWatering(watering, data['water3'],waterLevel)
+                if fanLoop == True:
+                    if fanState == False:
+                        fanState = toggleFan(True)
+                    elif fanState == True:
+                        fanState = toggleFan(False)
+                
         nextLog = lastLog + timedelta(seconds=int(x))
 
         
         
         
     except:
-        print(now)
-        token = authenticate()
-        
+        try:
+            # Ping Google's DNS server (8.8.8.8) with a single ping packet and a timeout of 5 seconds
+            response = subprocess.run(["ping", "-c", "1", "-W", "5", "8.8.8.8"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            # Check the return code to determine if the ping was successful
+            if response.returncode == 0:
+                print(now)
+                token = authenticate()
+        except Exception as e:
+            print("not connected")
+            pass
     sleep(1)
 
