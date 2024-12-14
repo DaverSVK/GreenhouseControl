@@ -1,11 +1,14 @@
-from ultralytics import YOLO
+import os
 import cv2
 import numpy
-from datetime import datetime
+
+# Server Coms
+from datetime import datetime, timedelta
 from time import sleep
 import requests
-import os
 import pyrebase
+
+# Sensors
 import board
 import busio
 import RPi.GPIO as GPIO
@@ -14,7 +17,10 @@ import adafruit_bh1750
 import adafruit_ahtx0
 import adafruit_ads1x15.ads1015 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
-from datetime import datetime, timedelta
+import sensors_periferal
+
+# Yolo detection
+from ultralytics import YOLO
 
 # Create the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -23,11 +29,14 @@ i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1015(i2c)
 ads.gain = 1
 #Lux sensor
-sensor = adafruit_bh1750.BH1750(i2c)
+sensor_bh1750, is_bh1750_availible = sensors_periferal.initBH1750(i2c)
+
 #temp/bar sensor
-sensor2 = adafruit_bmp280.Adafruit_BMP280_I2C(i2c)
+sensor_bmp280, is_bmp280_availible = sensors_periferal.initBMP280(i2c)
+
 #temp/bar sensor
-sensor3 = adafruit_ahtx0.AHTx0(i2c)
+sensor_ahtx0, is_ahtx0_availible = sensors_periferal.initAHTx0(i2c)
+
 # Create single-ended input on channel 0
 chan = AnalogIn(ads, ADS.P0)
 chan1 = AnalogIn(ads, ADS.P1)
@@ -57,6 +66,7 @@ fan.start(0)
 fanLoop = False
 fanState = False
 fanStateChange = False
+
 urlData="https://greenhouseapp-a928f-default-rtdb.firebaseio.com/data"
 url2="https://greenhouseapp-a928f-default-rtdb.firebaseio.com/settings"
 print(url2)
@@ -87,24 +97,35 @@ def authenticate():
     print(token)
     return token;
 
-def getDataValues(chan,chan1,chan2,chan3,sensor,sensor2,sensor3,now):
-#     Sensor svetla   
-    lux = round(sensor.lux, 2)
-#     Sensor press/bar   
-    temperature = round(sensor2.temperature, 2)
-    temperature2 = round(sensor3.temperature, 2)
-    print(temperature2)
-    humidity = round(sensor3.relative_humidity, 2)
-    pressure = round(sensor2.pressure, 2)
-    altitude = round(sensor2.altitude, 2)
+def getDataValues(chan,chan1,chan2,chan3,sensor_bh1750,sensor_bmp280,sensor_ahtx0,now):
+    
+    lux = 0.0
+    temperature = 0.0
+    pressure = 0.0
+    altitude = 0.0
+    temperature2 = 0.0
+    humidity = 0.0
+    
+    if(is_bh1750_availible):
+        # Sensor svetla   
+        lux = round(sensor_bh1750.lux, 2)
+    if(is_bmp280_availible):
+        # Sensor press/bar   
+        temperature = round(sensor_bmp280.temperature, 2)
+        pressure = round(sensor_bmp280.pressure, 2)
+        altitude = round(sensor_bmp280.altitude, 2)
+    if(is_ahtx0_availible):
+        # Sensor TEMP up
+        temperature2 = round(sensor_ahtx0.temperature, 2)
+        humidity = round(sensor_ahtx0.relative_humidity, 2)
 
-#     dole pravý
+    # dole pravý
     water = int(100-(100/1.366*(chan.voltage-0.806)))
-#     hore lavý
+    # hore lavý
     water2 = int(100-(100/1.358*(chan1.voltage-0.796)))
-#     horny pravý
+    # horny pravý
     water3 = int(100-(100/1.348*(chan2.voltage-0.844)))
-#     dolny lavý
+    # dolny lavý
     water4 = int(100-(100/1.398*(chan3.voltage-0.768)))
     data={"date": str(now),"water": water, "water2": water2, "water3": water3, "water4": water4, "lux": lux, "temperature": temperature,"temperature2": temperature2, "pressure": pressure,"humidity": humidity, "altitude": altitude}
     return data;
@@ -148,8 +169,8 @@ def toggleFan(wantedState):
         fanStateChange = False
     return True
 
-def toggleHeating(tempSetpoint,sensor2):
-    tempCurrent = round(sensor2.temperature, 2)
+def toggleHeating(tempSetpoint,sensor_bmp280):
+    tempCurrent = round(sensor_bmp280.temperature, 2)
     print(tempCurrent)
     if(tempCurrent > float(tempSetpoint)+2):
         GPIO.output(26, GPIO.LOW)
@@ -185,43 +206,43 @@ token =authenticate()
 
 while True:
     
-    try:
-        r= requests.get(url2 + ".json?auth="+token)
-        data=r.json()
-        x=data['sampling_time']
-        timeStart = data['light_start']
-        timeDur = data['light_duration']
-        temp = data['temperature']
-        watering = data['watering']
-        fanSett = data['fan_state']
-        print(fanSett)
-        now = datetime.now()
-        begin = now.replace(hour=int(timeStart), minute=0, second=0, microsecond=0)
-        stop = now.replace(hour=(int(timeStart)+int(timeDur)), minute=0, second=0, microsecond=0)
+    # try:
+    r= requests.get(url2 + ".json?auth="+token)
+    data=r.json()
+    x=data['sampling_time']
+    timeStart = data['light_start']
+    timeDur = data['light_duration']
+    temp = data['temperature']
+    watering = data['watering']
+    fanSett = data['fan_state']
+    print(fanSett)
+    now = datetime.now()
+    begin = now.replace(hour=int(timeStart), minute=0, second=0, microsecond=0)
+    stop = now.replace(hour=(int(timeStart)+int(timeDur)), minute=0, second=0, microsecond=0)
 #        print(stop)
 #         print(begin)
-        if int(fanSett) == 1:
-            toggleFan(True)
-        if int(fanSett) == 0:
-            toggleFan(False)
+    if int(fanSett) == 1:
+        toggleFan(True)
+    if int(fanSett) == 0:
+        toggleFan(False)
 
-        if now > stop and lightState == True:
-            lightState = toggleLight(True)
-        if now < stop and now > begin and lightState == False:
-            lightState = toggleLight(False)
-        toggleHeating(temp,sensor2)
-        startWatering(watering)
-        print(x)
-        if now < stop and now > begin:
-            if now >= nextLog:
-                lastLog = now
-                print(nextLog)
-                store = storePicture(x,now)
-                data = getDataValues(chan,chan1,chan2,chan3,sensor,sensor2,sensor3,now)
-                requests.post(urlData + ".json", json=data)
-        nextLog = lastLog + timedelta(seconds=int(x))
-    except:
-        print(now)
-        token = authenticate()
-        print("err")
+    if now > stop and lightState == True:
+        lightState = toggleLight(True)
+    if now < stop and now > begin and lightState == False:
+        lightState = toggleLight(False)
+    toggleHeating(temp,sensor_bmp280)
+    startWatering(watering)
+    print(x)
+    if now < stop and now > begin:
+        if now >= nextLog:
+            lastLog = now
+            print(nextLog)
+            store = storePicture(x,now)
+            data = getDataValues(chan,chan1,chan2,chan3,sensor_bh1750,sensor_bmp280,sensor_ahtx0,now)
+            requests.post(urlData + ".json", json=data)
+    nextLog = lastLog + timedelta(seconds=int(x))
+    # except:
+    #     print(now)
+    #     token = authenticate()
+    #     print("err")
     sleep(1)
