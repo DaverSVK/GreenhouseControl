@@ -46,7 +46,7 @@ chan3 = AnalogIn(ads, ADS.P3)
 #----light--------
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(12,GPIO.OUT)
-servoLight = GPIO.PWM(12,50)
+servoLight = None
 lightState = False
 
 #----heater--------
