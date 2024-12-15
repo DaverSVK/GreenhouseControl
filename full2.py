@@ -49,7 +49,7 @@ def storePicture(x,now):
     print("File Removed")
     return x
 #___________________________________________________
-
+sleep(120)
 # Create the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
 
@@ -105,8 +105,8 @@ firebaseConfig = {
   'appId': "1:770211079525:web:0f03c44ca33a0ae056ed8c",
   'measurementId': "G-S2CLPJ09XP"
 }
-
-model = YOLO('bestL.pt')
+model_path = os.path.expanduser('~/Bakalarka/bestL.pt')
+model = YOLO(model_path)
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth=firebase.auth()
 storage = firebase.storage()
