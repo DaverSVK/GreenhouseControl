@@ -118,47 +118,47 @@ lastLog = now
 token = authenticate()
 
 while True:
-    # try:
-    r= requests.get(url2 + ".json?auth="+token)
-    data=r.json()
-    
-    x=data['sampling_time']
-    timeStart = data['light_start']
-    timeDur = data['light_duration']
-    temp = data['temperature']
-    watering = data['watering']
-    fanSett = data['fan_state']
-    print(fanSett)
-    
-    now = datetime.now()
-    begin = now.replace(hour=int(timeStart), minute=0, second=0, microsecond=0)
-    stop = now.replace(hour=(int(timeStart)+int(timeDur)), minute=0, second=0, microsecond=0)
-#        print(stop)
-#         print(begin)
-    if int(fanSett) == 1:
-        hardware_control.toggleFan(True,fan)
-    if int(fanSett) == 0:
-        hardware_control.toggleFan(False,fan)
+    try:
+        r= requests.get(url2 + ".json?auth="+token)
+        data=r.json()
+        
+        x=data['sampling_time']
+        timeStart = data['light_start']
+        timeDur = data['light_duration']
+        temp = data['temperature']
+        watering = data['watering']
+        fanSett = data['fan_state']
+        print(fanSett)
+        
+        now = datetime.now()
+        begin = now.replace(hour=int(timeStart), minute=0, second=0, microsecond=0)
+        stop = now.replace(hour=(int(timeStart)+int(timeDur)), minute=0, second=0, microsecond=0)
+    #        print(stop)
+    #         print(begin)
+        if int(fanSett) == 1:
+            hardware_control.toggleFan(True,fan)
+        if int(fanSett) == 0:
+            hardware_control.toggleFan(False,fan)
 
-    if now > stop and lightState == True:
-        lightState = hardware_control.toggleLight(True)
-    if now < stop and now > begin and lightState == False:
-        lightState = hardware_control.toggleLight(False)
-    
-    hardware_control.toggleHeating(temp,sensor_bmp280)
-    hardware_control.startWatering(watering)
-    print(x)
-    
-    if now < stop and now > begin:
-        if now >= nextLog:
-            lastLog = now
-            print(nextLog)
-            store = storePicture(x,now)
-            data = sensors_periferal.getDataValues(chan,chan1,chan2,chan3,sensor_bh1750,sensor_bmp280,sensor_ahtx0,now,is_bh1750_availible,is_bmp280_availible,is_ahtx0_availible)
-            requests.post(urlData + ".json", json=data)
-    nextLog = lastLog + timedelta(seconds=int(x))
-    # except:
-    #     print(now)
-    #     token = authenticate()
-    #     print("err")
+        if now > stop and lightState == True:
+            lightState = hardware_control.toggleLight(True)
+        if now < stop and now > begin and lightState == False:
+            lightState = hardware_control.toggleLight(False)
+        
+        hardware_control.toggleHeating(temp,sensor_bmp280)
+        hardware_control.startWatering(watering)
+        print(x)
+        
+        if now < stop and now > begin:
+            if now >= nextLog:
+                lastLog = now
+                print(nextLog)
+                store = storePicture(x,now)
+                data = sensors_periferal.getDataValues(chan,chan1,chan2,chan3,sensor_bh1750,sensor_bmp280,sensor_ahtx0,now,is_bh1750_availible,is_bmp280_availible,is_ahtx0_availible)
+                requests.post(urlData + ".json", json=data)
+        nextLog = lastLog + timedelta(seconds=int(x))
+    except:
+        print(now)
+        token = authenticate()
+        print("err")
     sleep(1)
