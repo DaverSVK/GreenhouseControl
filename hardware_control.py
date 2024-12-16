@@ -36,7 +36,7 @@ def toggleLight(wantedState):
 
 def toggleFan(wantedState,fan,DutyFan):
     if(wantedState == True):
-        fan.ChangeDutyCycle(DutyFan)
+        fan.ChangeDutyCycle(int(DutyFan))
         return True
     else:
         fan.ChangeDutyCycle(0)
