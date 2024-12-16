@@ -34,9 +34,9 @@ def toggleLight(wantedState):
     servoLight.stop()
     return lightState
 
-def toggleFan(wantedState,fan):
+def toggleFan(wantedState,fan,DutyFan):
     if(wantedState == True):
-        fan.ChangeDutyCycle(40)
+        fan.ChangeDutyCycle(DutyFan)
         return True
     else:
         fan.ChangeDutyCycle(0)

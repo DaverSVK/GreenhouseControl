@@ -135,10 +135,10 @@ while True:
         stop = now.replace(hour=(int(timeStart)+int(timeDur)), minute=0, second=0, microsecond=0)
     #        print(stop)
     #         print(begin)
-        if int(fanSett) == 1:
-            hardware_control.toggleFan(True,fan)
+        if int(fanSett) > 10:
+            hardware_control.toggleFan(True,fan,fanSett)
         if int(fanSett) == 0:
-            hardware_control.toggleFan(False,fan)
+            hardware_control.toggleFan(False,fan,0)
 
         if now > stop and lightState == True:
             lightState = hardware_control.toggleLight(True)
